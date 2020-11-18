@@ -1,10 +1,9 @@
 from matplotlib import pyplot as plt
-import matplotlib
-matplotlib.use("TkAgg")
 import numpy as np
 import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib import animation
-
+import matplotlib
+matplotlib.use("TkAgg")
 
 
 def main():
@@ -24,25 +23,23 @@ def main():
                 data_in[i_x, i_y, i_z, i_all] = 1
                 i_all = i_all + 1
 
-
     def update_plot(i):
         data_vol = data_in[:, :, :, i]
+        # TODO: how to change colours rather than redrawing plot?
         plt.cla()
-        scat = ax.scatter(x.reshape(-1), y.reshape(-1), z.reshape(-1), c=data_vol.reshape(-1), cmap='binary',
+        scat = ax.scatter(x.flatten(), y.flatten(), z.flatten(), c=data_vol.reshape(-1), cmap='binary',
                           depthshade=False, vmin=0, vmax=1, edgecolors="black")
+
         ax.set_xticklabels("")
         ax.set_yticklabels("")
         ax.set_zticklabels("")
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        ax.set_ylabel('Z')
-        plt.title('Matplot 3d scatter plot')
-
-        return scat
+        ax.set_zlabel('Z')
+        return scat,
 
     ani = animation.FuncAnimation(fig, update_plot, interval=t_step, frames=data_in.shape[3])
     plt.show()
-
 
 
 main()
