@@ -22,6 +22,9 @@ for d in np.arange(0, n_drops):
     t_d = np.random.choice(np.arange(0, vols_max - 7))
     data_matrix[x_d, y_d, :, t_d:t_d+7] = data_matrix[x_d, y_d, :, t_d:t_d+7] + drop_column
 
+# add ceiling
+data_matrix[:, :, 6, :] = 1
+
 # crop un-used volumes
 final_vol = np.max(np.nonzero(data_matrix.reshape(-1, data_matrix.shape[-1])))
 data_matrix = data_matrix[:, :, :, 0:final_vol]
