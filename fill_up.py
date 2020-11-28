@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-i_grid = 7
+i_grid = 3
 
 data_matrix = np.zeros((i_grid, i_grid, i_grid, i_grid**3))
 
@@ -16,6 +16,9 @@ for i in np.arange(0, i_grid**3):
 ### save matrix
 # data path
 dd = os.path.join(os.path.dirname(__file__), 'sequences')
+if not os.path.exists(dd):
+    os.makedirs(dd)
+
 # output filename
 fname = os.path.join(dd, 'fill_up')
 np.save(fname, data_matrix)
