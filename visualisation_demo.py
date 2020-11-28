@@ -9,13 +9,6 @@ matplotlib.use("TkAgg")
 
 
 def main():
-    i_grid = 7
-    t_step = 500 # milliseconds
-
-    # initialize 3D scatter plot
-    x, y, z = np.meshgrid(np.arange(i_grid), np.arange(i_grid), np.arange(i_grid))
-    fig = plt.figure()
-    ax = p3.Axes3D(fig)
 
     # load 4d matrix from file
     dd = os.path.join(os.path.dirname(__file__), 'sequences')
@@ -28,6 +21,16 @@ def main():
         if not os.path.isfile(fname):
             print('sequence does not exist')
     data_in = np.load(fname)
+
+    i_grid = data_in.shape[0]
+    t_step = 200 # milliseconds
+
+    # initialize 3D scatter plot
+    x, y, z = np.meshgrid(np.arange(i_grid), np.arange(i_grid), np.arange(i_grid))
+    fig = plt.figure()
+    ax = p3.Axes3D(fig)
+
+
 
     def update_plot(i):
         # read in each slice of the 4D matrix
@@ -55,6 +58,12 @@ def main():
         plt.cla()
         scat = ax.scatter(x.flatten(), y.flatten(), z.flatten(), c=data_in.reshape(-1), cmap='binary',
                           depthshade=False, vmin=0, vmax=1, edgecolors="white")
+        ax.set_xticklabels("")
+        ax.set_yticklabels("")
+        ax.set_zticklabels("")
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
         plt.show()
 
 
