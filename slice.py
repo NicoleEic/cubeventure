@@ -2,7 +2,7 @@ import numpy as np
 import os
 import scipy.ndimage.interpolation
 
-i_grid = 7
+i_grid = 3
 # number of rotating slices
 n_slices = 10
 # number of steps to interpolate for rotation

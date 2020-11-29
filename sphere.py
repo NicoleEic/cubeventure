@@ -4,7 +4,7 @@ import scipy.ndimage
 from matplotlib import pyplot as plt
 
 
-i_grid = 7
+i_grid = 3
 
 # initialize empty matrix with centre 1
 data_matrix = np.zeros((i_grid, i_grid, i_grid))
@@ -34,6 +34,6 @@ fname = os.path.join(dd, 'sphere')
 np.save(fname, data_matrix)
 
 # call visualization script
-os.system("python visualisation_demo.py sphere")
+os.system("python run_visualisation.py sphere")
 
 

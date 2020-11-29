@@ -1,11 +1,7 @@
 import numpy as np
 import os
 
-<<<<<<< HEAD
 i_grid = 3
-=======
-i_grid = 4
->>>>>>> eba1ebfcd3a11f9888c7a6b6b66a309d511369fb
 
 data_matrix = np.zeros((i_grid, i_grid, i_grid, i_grid**3))
 
@@ -32,4 +28,5 @@ fname = os.path.join(dd, 'fill_up')
 np.save(fname, data_matrix)
 
 # call visualization script
-os.system("python visualisation_demo.py fill_up")
+#os.system("python visualisation_demo.py fill_up")
+os.system("python run_visualisation.py fill_up")
