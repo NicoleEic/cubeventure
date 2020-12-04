@@ -34,17 +34,22 @@ t_p = args.pin_delay
 # time step between volumes (needs to be multiples of t_p)
 t_s = args.time_step
 
+
+# number of alterations to code for intensity
+n_steps_pin = 6
+
 # repetition of cycles through layers
-# TODO: change sampling frequency in case it does not fit
-n_reps = np.int(t_s / t_p)
+n_reps_layer = np.ceil(t_s / (n_steps_pin * i_grid * t_p)).astype(np.int)
 
 
 # load 4d matrix from file
-fname = args.fname
-dd = os.path.join(os.path.dirname(__file__), 'sequences')
-#dd = '/home/pi/myCode/cubeventure/sequences'
-fpath = os.path.join(dd, fname) + '.npy'
-data_in = np.load(fpath)
+def read_in_data(fname):
+    fname = args.fname
+    dd = os.path.join(os.path.dirname(__file__), 'sequences')
+    #dd = '/home/pi/myCode/cubeventure/sequences'
+    fpath = os.path.join(dd, fname) + '.npy'
+    data_in = np.load(fpath)
+    return data_in
 
 
 # initialisation of the pins 
@@ -57,34 +62,63 @@ def setupColumns():
     GPIO.output(pa.reshape(-1).tolist(), False)
     GPIO.output(layers, False)
     
-    
-def test():
-    GPIO.output(17, True)
-    GPIO.output(23, True)
+
+# function to turn on a single pin
+def single_pin(col, layer):
+    GPIO.output(col, True)
+    GPIO.output(layer, True)
     sleep(5)
-    GPIO.output(17, False)
-    GPIO.output(23, False)
-    
+    GPIO.output(col, False)
+    GPIO.output(layer, False)
+
+
+def intensity_to_binary(vol):
+    expanded = np.zeros((i_grid, i_grid, i_grid, n_steps_pin))
+    for i_r in np.arange(0, n_reps_layer):
+        for iz in np.arange(0, i_grid):
+            # loop over x and z
+            for ix in np.arange(0, vol.shape[0]):
+                for iy in np.arange(0, vol.shape[1]):
+                    # convert intensity to binary vector
+                    intensity = vol[ix, iy, iz]
+                    vec = np.zeros(n_steps_pin)
+                    if intensity != 0:
+                        step = np.round(1 / intensity).astype(np.int)
+                        vec[0::step] = 1
+                    expanded[ix, iy, iz, :] = vec
+    return expanded
+
 
 def show_pattern(pattern):
-    for i_v in np.arange(0, data_in.shape[3]):
-        vol = data_in[:,:,:,i_v]
-        for i_r in np.arange(0, n_reps):
-            for layer in np.arange(0, i_grid):
-                pins = pa[np.where(vol[:,:,layer] !=0)].tolist()
-                GPIO.output(pins, True)
-                GPIO.output(layers[layer], True)
-                sleep(t_p)
-                GPIO.output(pins, False)
-                GPIO.output(layers[layer], False)
+    # loop over time points in matrix
+    for i_t in np.arange(0, data_in.shape[3]):
+        # extract single volume
+        vol = data_in[:, :, :, i_t]
+        # convert intensity values in volume to 4D binary matrix
+        vol_exp = intensity_to_binary(vol)
+        # loop over elements of expanded matrix
+        for i_v in np.arange(0, n_steps_pin):
+            # extract sincle time point volume
+            vol_step = vol_exp[:, :, :, i_v]
+            # loop over repetitions
+            for i_r in np.arange(0, n_reps_layer):
+                # loop over layers
+                for i_z in np.arange(0, i_grid):
+                    # select active columns
+                    pins = pa[np.where(vol[:, :, i_z] != 0)].tolist()
+                    GPIO.output(pins, True)
+                    GPIO.output(layers[i_z], True)
+                    sleep(t_p)
+                    GPIO.output(pins, False)
+                    GPIO.output(layers[i_z], False)
 
 # Mainline logic . . . 
 try:
     print('Press CTRL+C to stop script')
     setupColumns()
+    data_in = read_in_data(args.fname)
     show_pattern(data_in)
-    #test()
- 
+
 except KeyboardInterrupt:
     GPIO.cleanup()
 
