@@ -1,8 +1,6 @@
 from matplotlib import pyplot as plt
 import cubeventure
-import os
-import sys
-import argparse
+import time
 import numpy as np
 import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib import animation
@@ -11,12 +9,13 @@ matplotlib.use("TkAgg")
 
 
 class PlotSequence:
-    def __init__(self, args):
-        self.args = args
+    def __init__(self):
+        self.args = cubeventure.my_parser().parse_args()
+        print(self.args)
         if len(self.args.matrix) == 0:
-            self.matrix = cubeventure.load_data(args.fname)
+            self.matrix = cubeventure.load_data(self.args.fname)
         else:
-            self.matrix = args.matrix
+            self.matrix = self.args.matrix
         self.i_grid = self.matrix.shape[0]
         self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
         self.fig = plt.figure()
@@ -52,8 +51,6 @@ class PlotSequence:
 
 
 if __name__ == "__main__":
-    parser = cubeventure.my_parser()
-    my_args = parser.parse_args()
-    my_plot = PlotSequence(my_args)
+    my_plot = PlotSequence()
 
 
