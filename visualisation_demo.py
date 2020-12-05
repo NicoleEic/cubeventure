@@ -9,48 +9,51 @@ from matplotlib import animation
 import matplotlib
 matplotlib.use("TkAgg")
 
-parser = cubeventure.my_parser()
-args = parser.parse_args()
-print(args)
 
-if len(args.matrix) == 0:
-    data_in = cubeventure.load_data(args.fname)
-else:
-    data_in = args.matrix
+class PlotSequence:
+    def __init__(self, args):
+        self.args = args
+        if len(self.args.matrix) == 0:
+            self.matrix = cubeventure.load_data(args.fname)
+        else:
+            self.matrix = args.matrix
+        self.i_grid = self.matrix.shape[0]
+        self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
+        self.fig = plt.figure()
+        self.ax = p3.Axes3D(self.fig)
+        self.run_animation()
 
-i_grid = data_in.shape[0]
+    def plot_volume(self, vol):
+        # TODO: how to change colours rather than redrawing plot?
+        plt.cla()
+        scat = self.ax.scatter(self.x.flatten(), self.y.flatten(), self.z.flatten(), c=vol.reshape(-1), cmap='binary', depthshade=False, vmin=0, vmax=1, edgecolors="white")
+        self.ax.set_xticklabels("")
+        self.ax.set_yticklabels("")
+        self.ax.set_zticklabels("")
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_zlabel('Z')
+        return scat
 
-# initialize 3D scatter plot
-x, y, z = np.meshgrid(np.arange(i_grid), np.arange(i_grid), np.arange(i_grid))
-fig = plt.figure()
-ax = p3.Axes3D(fig)
+    def update_plot(self, i):
+        # read in each volume of the 4D matrix
+        data_vol = self.matrix[:, :, :, i]
+        self.plot_volume(data_vol)
 
-def plot_volume(vol):
-    # TODO: how to change colours rather than redrawing plot?
-    plt.cla()
-    scat = ax.scatter(x.flatten(), y.flatten(), z.flatten(), c=vol.reshape(-1), cmap='binary', depthshade=False, vmin=0, vmax=1, edgecolors="white")
-    ax.set_xticklabels("")
-    ax.set_yticklabels("")
-    ax.set_zticklabels("")
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    return scat
+    def run_animation(self):
+        # animation for 4D matrix
+        if len(self.matrix.shape) == 4:
+            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.args.time_step*1000, frames=self.matrix.shape[3])
+            plt.show()
+        # static plot if only 3D matrix
+        elif len(self.matrix.shape) == 3:
+            plt.cla()
+            self.plot_volume(self.matrix)
 
 
-def update_plot(i):
-    # read in each volume of the 4D matrix
-    data_vol = data_in[:, :, :, i]
-    plot_volume(data_vol)
-
-
-# animation for 4D matrix
-if len(data_in.shape) == 4:
-    ani = animation.FuncAnimation(fig, update_plot, interval=args.time_step*1000, frames=data_in.shape[3])
-    plt.show()
-# static plot if only 3D matrix
-elif len(data_in.shape) == 3:
-    plt.cla()
-    plot_volume(data_in)
+if __name__ == "__main__":
+    parser = cubeventure.my_parser()
+    my_args = parser.parse_args()
+    my_plot = PlotSequence(my_args)
 
 
