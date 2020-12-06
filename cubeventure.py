@@ -1,12 +1,13 @@
 import argparse
 import numpy as np
 import os
+import sys
 
 def my_parser():
     parser = argparse.ArgumentParser(description='Optional description')
     parser.add_argument('--fname', type=str, help='path to visualization file', default='sequence')
     parser.add_argument('--matrix', type=np.array, help='numpy array with matrix', default=np.zeros(0))
-    parser.add_argument('--pin_delay', type=np.float64, help='delay between pin outputs', default=0.001)
+    parser.add_argument('--pin_delay', type=np.float64, help='delay between pin outputs', default=0.0002)
     parser.add_argument('--time_step', type=np.float64, help='time between volumes in s', default=0.5)
     parser.add_argument('--cube_size', type=np.int, help='size of cube', default=3)
     parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default='cube')
@@ -32,7 +33,11 @@ def load_matrix(fname):
 
 def save_matrix(matrix, fname):
     dd = os.path.join(os.path.dirname(__file__), 'sequences')
+    if not os.path.exists(dd):
+        os.makedirs(dd)
     fname = os.path.join(dd, fname)
+    if np.all((matrix == 1) | (matrix == 0)):
+        matrix = matrix.astype(np.int32)
     np.save(fname, matrix)
 
 
@@ -45,6 +50,7 @@ def grid_array(i_grid):
         ly_pins = [24, 23, 25]
     elif i_grid == 7:
         print('define pin array')
+        sys.exit()
     return col_pins, ly_pins
 
 
@@ -58,14 +64,12 @@ def intensity_to_binary(matrix, n_steps_pin):
         vol = matrix[:, :, :, i_t]
         ind_start = i_t * n_steps_pin
         ind_stop = i_t * n_steps_pin + n_steps_pin
-        # loop over z
+        # loop over z, x, z
         for iz in np.arange(0, i_grid):
-            # loop over x
             for ix in np.arange(0, i_grid):
-                # loop over z
                 for iy in np.arange(0, i_grid):
-                    # convert intensity to binary vector
                     intensity = vol[ix, iy, iz]
+                    # convert intensity to binary vector
                     vec = np.zeros(n_steps_pin)
                     if intensity != 0:
                         step = np.round(1 / intensity).astype(np.int32)
