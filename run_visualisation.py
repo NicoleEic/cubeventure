@@ -6,8 +6,6 @@ import argparse
 import cubeventure as cv
 
 
-<<<<<<< HEAD
-=======
 class CubeSequence:
     def __init__(self, args):
         try:
@@ -32,7 +30,6 @@ class CubeSequence:
             GPIO.cleanup()
         finally:
             GPIO.cleanup()
->>>>>>> ed6e364163f4f83eee7addb5c9a20e8182d0bc85
 
     # initialisation of the pins
     def setup_columns(self):
@@ -81,21 +78,9 @@ if __name__ == "__main__":
         cmd_str = f'python visualisation_demo.py --vis_type plot' + cv.args_to_cmd(my_args)
         os.system(cmd_str)
 
-<<<<<<< HEAD
-# mainline logic 
-try:
-    print('Press CTRL+C to stop script')
-    setupColumns()
-    show_pattern(data_in)
-    #test()
- 
-except KeyboardInterrupt:
-    GPIO.cleanup()
-=======
     elif my_args.vis_type == 'plot':
         cmd_str = f'python visualisation_demo.py --vis_type plot_binary' + cv.args_to_cmd(my_args)
         os.system(cmd_str)
->>>>>>> ed6e364163f4f83eee7addb5c9a20e8182d0bc85
 
     elif my_args.vis_type == 'cube':
         visu = CubeSequence(my_args)
