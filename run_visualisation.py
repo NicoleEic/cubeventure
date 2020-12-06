@@ -50,31 +50,39 @@ class CubeSequence:
         
         if self.matrix.dtype != np.int32:
             print('convert intensities')
-            # number of binary alterations to code for intensity
-            n_steps_pin = args.n_steps_pin
+            n_steps_pin = self.args.n_steps_pin
             # repetition of cycles through layers
-            n_reps_layer = np.ceil(t_s / (n_steps_pin * self.i_grid * t_p)).astype(np.int)
-            # convert intensities to binary matrix
-            matrix = cv.intensity_to_binary(self.matrix, n_steps_pin)
+            n_reps = np.ceil(t_s / (n_steps_pin * self.i_grid * t_p)).astype(np.int)
+            # loop over real volumes
+            for i_v in np.arange(0, self.matrix.shape[3]):
+                vol = self.matrix[:, :, :, i_v]
+                # convert intensities to binary matrix
+                vol_exp = cv.intensity_to_binary(vol, n_steps_pin)
+                # loop over repetitions
+                for i_r in np.arange(0, n_reps):
+                    for i_s in np.arange(0, n_steps_pin):
+                        vol_s = vol_exp[:, :, :, i_s]
+                        self.show_vol(vol_s)     
         else:
             matrix = self.matrix
-            n_reps_layer = np.ceil(t_s / (self.i_grid * t_p)).astype(np.int)
-        print(n_reps_layer)
-        
-        # loop over elements of expanded matrix
-        for i_v in np.arange(0, matrix.shape[3]):
-            vol = matrix[:, :, :, i_v]
-            # loop over repetitions
-            for i_r in np.arange(0, n_reps_layer):
-                # loop over layers
-                for i_z in np.arange(0, self.i_grid):
-                    # select active columns
-                    pins = self.col_pins[np.where(vol[:, :, i_z] != 0)].tolist()
-                    GPIO.output(pins, True)
-                    GPIO.output(self.ly_pins[i_z], True)
-                    sleep(self.args.pin_delay)
-                    GPIO.output(pins, False)
-                    GPIO.output(self.ly_pins[i_z], False)
+            n_reps = np.ceil(t_s / (self.i_grid * t_p)).astype(np.int)
+            # loop over elements of expanded matrix
+            for i_v in np.arange(0, matrix.shape[3]):
+                vol = matrix[:, :, :, i_v]
+                # loop over repetitions
+                for i_r in np.arange(0, n_reps):
+                    self.show_vol(vol)        
+            
+    def show_vol(self, vol):
+        # loop over layers
+        for i_z in np.arange(0, self.i_grid):
+            # select active columns
+            pins = self.col_pins[np.where(vol[:, :, i_z] != 0)].tolist()
+            GPIO.output(pins, True)
+            GPIO.output(self.ly_pins[i_z], True)
+            sleep(self.args.pin_delay)
+            GPIO.output(pins, False)
+            GPIO.output(self.ly_pins[i_z], False)
 
 
 if __name__ == "__main__":

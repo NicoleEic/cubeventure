@@ -9,8 +9,8 @@ def my_parser():
     parser.add_argument('--pin_delay', type=np.float64, help='delay between pin outputs', default=0.001)
     parser.add_argument('--time_step', type=np.float64, help='time between volumes in s', default=0.5)
     parser.add_argument('--cube_size', type=np.int, help='size of cube', default=3)
-    parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default='plot')
-    parser.add_argument('--pin_reps', type=np.int32, help='length of binary vetor', default=6)
+    parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default='cube')
+    parser.add_argument('--n_steps_pin', type=np.int32, help='length of binary vetor', default=6)
     return parser
 
 
@@ -22,7 +22,7 @@ def args_to_cmd(args):
 
 
 # load 4d matrix from file
-def load_data(fname):
+def load_matrix(fname):
     dd = os.path.join(os.path.dirname(__file__), 'sequences')
     # dd = '/home/pi/myCode/cubeventure/sequences'
     fpath = os.path.join(dd, fname) + '.npy'
@@ -42,7 +42,7 @@ def grid_array(i_grid):
                        [22, 16, 27],
                        [5, 17, 26]])
         # top - middle - top
-        ly_pins = [25, 24, 23]
+        ly_pins = [24, 23, 25]
     elif i_grid == 7:
         print('define pin array')
     return col_pins, ly_pins
@@ -50,7 +50,9 @@ def grid_array(i_grid):
 
 def intensity_to_binary(matrix, n_steps_pin):
     i_grid = matrix.shape[0]
-    t_steps = matrix.shape[3]
+    if matrix.ndim == 3:
+        matrix = np.expand_dims(matrix, axis=4)
+    t_steps = matrix.shape[3]    
     expanded = np.zeros((i_grid, i_grid, i_grid, n_steps_pin*t_steps))
     for i_t in np.arange(0, t_steps):
         vol = matrix[:, :, :, i_t]
