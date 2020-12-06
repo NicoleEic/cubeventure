@@ -1,6 +1,5 @@
 from matplotlib import pyplot as plt
-import cubeventure
-import time
+import cubeventure as cv
 import numpy as np
 import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib import animation
@@ -10,12 +9,21 @@ matplotlib.use("TkAgg")
 
 class PlotSequence:
     def __init__(self):
-        self.args = cubeventure.my_parser().parse_args()
+        self.args, unknown = cv.my_parser().parse_known_args()
         print(self.args)
-        if len(self.args.matrix) == 0:
-            self.matrix = cubeventure.load_data(self.args.fname)
+
+        if self.args.matrix.size < 2:
+            self.matrix = cv.load_data(self.args.fname)
+        # use matrix directly
         else:
             self.matrix = self.args.matrix
+
+        if self.args.vis_type == 'plot_binary':
+            self.matrix = cv.intensity_to_binary(self.matrix, self.args.pin_reps)
+            self.update_rate = self.args.pin_delay * 1000
+        else:
+            self.update_rate = self.args.time_step * 1000
+
         self.i_grid = self.matrix.shape[0]
         self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
         self.fig = plt.figure()
@@ -42,7 +50,7 @@ class PlotSequence:
     def run_animation(self):
         # animation for 4D matrix
         if len(self.matrix.shape) == 4:
-            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.args.time_step*1000, frames=self.matrix.shape[3])
+            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
             plt.show()
         # static plot if only 3D matrix
         elif len(self.matrix.shape) == 3:
