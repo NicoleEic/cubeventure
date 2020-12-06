@@ -1,9 +1,8 @@
 import numpy as np
-import random
 import os
+import cubeventure as cv
 
-i_grid = 3
-
+i_grid = 7
 n_drops = 25
 vols_max = 50
 
@@ -23,18 +22,13 @@ for d in np.arange(0, n_drops):
     data_matrix[x_d, y_d, :, t_d:t_d+i_grid] = data_matrix[x_d, y_d, :, t_d:t_d+i_grid] + drop_column
 
 # add ceiling
-#data_matrix[:, :, i_grid-1, :] = 1
+data_matrix[:, :, i_grid-1, :] = 1
 
 # crop un-used volumes
 final_vol = np.max(np.nonzero(data_matrix.reshape(-1, data_matrix.shape[-1])))
 data_matrix = data_matrix[:, :, :, 0:final_vol]
 
-### save matrix
-# data path
-dd = os.path.join(os.path.dirname(__file__), 'sequences')
-# output filename
-fname = os.path.join(dd, 'rain')
-np.save(fname, data_matrix)
+cv.save_matrix(data_matrix, 'rain')
 
 # call visualization script
-os.system("python run_visualisation.py rain")
+os.system("python run_visualisation.py --fname rain --vis_type plot --time_step 0.5")
