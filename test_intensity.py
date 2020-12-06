@@ -3,9 +3,9 @@ import cubeventure as cv
 import os
 
 matrix = np.ones((7, 7, 7, 5))
-matrix[:,:,:,1] = 0.5
+matrix[:,:,:,1] = 0.2
 matrix[:,:,:,2] = 0
-matrix[:,:,:,3] = 0.5
+matrix[:,:,:,3] = 0.2
 matrix[:,:,:,4] = 1
 
 cv.save_matrix(matrix, 'test')

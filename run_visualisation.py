@@ -78,7 +78,7 @@ if __name__ == "__main__":
         cmd_str = f'python visualisation_demo.py --vis_type plot' + cv.args_to_cmd(my_args)
         os.system(cmd_str)
 
-    elif my_args.vis_type == 'plot':
+    elif my_args.vis_type == 'plot_binary':
         cmd_str = f'python visualisation_demo.py --vis_type plot_binary' + cv.args_to_cmd(my_args)
         os.system(cmd_str)
 
