@@ -1,7 +1,8 @@
 import numpy as np
 import os
+import cuebeventure as cv
 
-i_grid = 3
+i_grid = 7
 
 data_matrix = np.zeros((i_grid, i_grid, i_grid, i_grid**3))
 
@@ -17,16 +18,7 @@ for i in np.arange(1, i_grid**3):
 # crop out as solution for now
 data_matrix = data_matrix[:, :, :, 1:-1]
 
-### save matrix
-# data path
-dd = os.path.join(os.path.dirname(__file__), 'sequences')
-if not os.path.exists(dd):
-    os.makedirs(dd)
-
-# output filename
-fname = os.path.join(dd, 'fill_up')
-np.save(fname, data_matrix)
+cv.save_matrix(data_matrix, 'fill_up')
 
 # call visualization script
-#os.system("python visualisation_demo.py fill_up")
-os.system("python run_visualisation.py fill_up")
+os.system("python run_visualisation.py --fname fill_up --vis_type plot --time_step 0.5")
