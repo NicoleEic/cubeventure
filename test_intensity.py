@@ -12,7 +12,7 @@ matrix[:,:,:,4] = 1
 matrix = np.append(matrix, matrix, axis=3)
 
 cv.save_matrix(matrix, 'test')
-os.system("python3 run_visualisation.py --fname test --vis_type cube --time_step 1")
+os.system("python3 run_visualisation.py --fname test --vis_type plot_binary --time_step 1")
 
 
 
