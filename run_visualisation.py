@@ -1,82 +1,87 @@
-import RPi.GPIO as GPIO 
 from time import sleep
 import numpy as np
 import os
 import sys
 import argparse
-
-parser = argparse.ArgumentParser(description='Optional description')
-parser.add_argument('--fname', type=str, help='path to visualization file', default='fill_up')
-parser.add_argument('--pin_delay', type=np.float64, help='delay between pin outputs', default=0.001)
-parser.add_argument('--time_step', type=np.float64, help='time between volumes', default=0.5)
-parser.add_argument('--cube_size', type=np.int, help='size of cube', default=3)
-args = parser.parse_args()
+import cubeventure as cv
 
 
-i_grid = args.cube_size
+<<<<<<< HEAD
+=======
+class CubeSequence:
+    def __init__(self, args):
+        try:
+            self.args = args
+            self.i_grid = args.cube_size
+            self.col_pins, self.ly_pins = cv.grid_array(self.i_grid)
+            # Time delay built in between pin output
+            t_p = args.pin_delay
+            # time step between volumes (needs to be multiples of t_p)
+            t_s = args.time_step
+            # number of alterations to code for intensity
+            self.n_steps_pin = 6
+            # repetition of cycles through layers
+            self.n_reps_layer = np.ceil(t_s / (self.n_steps_pin * self.i_grid * t_p)).astype(np.int)
+            if len(self.args.matrix) == 0:
+                self.matrix = cv.load_data(self.args.fname)
+            else:
+                self.matrix = self.args.matrix
+            self.setup_columns()
+            self.show_pattern()
+        except KeyboardInterrupt:
+            GPIO.cleanup()
+        finally:
+            GPIO.cleanup()
+>>>>>>> ed6e364163f4f83eee7addb5c9a20e8182d0bc85
 
-# array of pins for columns
-if i_grid == 3:
-    pa = np.array([[13, 6, 4],
-                   [22, 16, 27],
-                   [5, 17, 26]])
-    # top - middle - top
-    layers = [25, 24, 23]
-elif i_grid == 7:
-    print('define pin array')
-    sys.exit()
-        
+    # initialisation of the pins
+    def setup_columns(self):
+        # GPIO pin addressing will use the virtual number
+        GPIO.setmode(GPIO.BCM)
+        # Initialise the pins so we can output values to them
+        GPIO.setup(self.col_pins.reshape(-1).tolist(), GPIO.OUT)
+        GPIO.setup(self.ly_pins, GPIO.OUT)
+        GPIO.output(self.col_pins.reshape(-1).tolist(), False)
+        GPIO.output(self.ly_pins, False)
 
-# Time delay built in between pin output
-t_p = args.pin_delay
+    # function to turn on a single pin
+    def single_pin(self, col, layer, t_light=5):
+        GPIO.output(col, True)
+        GPIO.output(layer, True)
+        sleep(t_light)
+        GPIO.output(col, False)
+        GPIO.output(layer, False)
 
-# time step between volumes (needs to be multiples of t_p)
-t_s = args.time_step
+    def show_pattern(self):
+        # convert intensity values in volume to 4D binary matrix
+        matrix_exp = cv.intensity_to_binary(self.matrix, self.args.n_steps_pin)
+        # loop over repetitions
+        for i_r in np.arange(0, self.n_reps_layer):
+            # loop over elements of expanded matrix
+            for i_v in np.arange(0, matrix_exp.shape[3]):
+                vol = matrix_exp[:, :, :, i_v]
+                # loop over layers
+                for i_z in np.arange(0, self.i_grid):
+                    # select active columns
+                    pins = self.col_pins[np.where(vol[:, :, i_z] != 0)].tolist()
+                    GPIO.output(pins, True)
+                    GPIO.output(self.ly_pins[i_z], True)
+                    sleep(self.args.pin_delay)
+                    GPIO.output(pins, False)
+                    GPIO.output(self.ly_pins[i_z], False)
 
-# repetition of cycles through layers
-# TODO: change sampling frequency in case it does not fit
-n_reps = np.int(t_s / t_p)
 
+if __name__ == "__main__":
+    print('Press CTRL+C to stop script')
+    my_args, unknown = cv.my_parser().parse_known_args()
+    if my_args.vis_type == 'cube':
+        import RPi.GPIO as GPIO
 
-# load 4d matrix from file
-fname = args.fname
-dd = os.path.join(os.path.dirname(__file__), 'sequences')
-#dd = '/home/pi/myCode/cubeventure/sequences'
-fpath = os.path.join(dd, fname) + '.npy'
-data_in = np.load(fpath)
+    if my_args.vis_type == 'plot':
+        cmd_str = f'python visualisation_demo.py --vis_type plot' + cv.args_to_cmd(my_args)
+        os.system(cmd_str)
 
-
-# initialisation of the pins 
-def setupColumns():
-    # GPIO pin addressing will use the virtual number
-    GPIO.setmode(GPIO.BCM)
-    # Initialise the pins so we can output values to them 
-    GPIO.setup(pa.reshape(-1).tolist(), GPIO.OUT)
-    GPIO.setup(layers, GPIO.OUT)
-    GPIO.output(pa.reshape(-1).tolist(), False)
-    GPIO.output(layers, False)
-    
-    
-def test():
-    GPIO.output(17, True)
-    GPIO.output(23, True)
-    sleep(5)
-    GPIO.output(17, False)
-    GPIO.output(23, False)
-    
-
-def show_pattern(pattern):
-    for i_v in np.arange(0, data_in.shape[3]):
-        vol = data_in[:,:,:,i_v]
-        for i_r in np.arange(0, n_reps):
-            for layer in np.arange(0, i_grid):
-                pins = pa[np.where(vol[:,:,layer] !=0)].tolist()
-                GPIO.output(pins, True)
-                GPIO.output(layers[layer], True)
-                sleep(t_p)
-                GPIO.output(pins, False)
-                GPIO.output(layers[layer], False)
-
+<<<<<<< HEAD
 # mainline logic 
 try:
     print('Press CTRL+C to stop script')
@@ -86,6 +91,11 @@ try:
  
 except KeyboardInterrupt:
     GPIO.cleanup()
+=======
+    elif my_args.vis_type == 'plot':
+        cmd_str = f'python visualisation_demo.py --vis_type plot_binary' + cv.args_to_cmd(my_args)
+        os.system(cmd_str)
+>>>>>>> ed6e364163f4f83eee7addb5c9a20e8182d0bc85
 
-finally:
-    GPIO.cleanup()
+    elif my_args.vis_type == 'cube':
+        visu = CubeSequence(my_args)

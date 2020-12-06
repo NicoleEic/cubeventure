@@ -1,6 +1,5 @@
 from matplotlib import pyplot as plt
-import os
-import sys
+import cubeventure as cv
 import numpy as np
 import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib import animation
@@ -8,63 +7,58 @@ import matplotlib
 matplotlib.use("TkAgg")
 
 
-def main():
+class PlotSequence:
+    def __init__(self):
+        self.args, unknown = cv.my_parser().parse_known_args()
+        print(self.args)
 
-    # load 4d matrix from file
-    dd = os.path.join(os.path.dirname(__file__), 'sequences')
-    # default sequence
-    if len(sys.argv) == 1:
-        fname = os.path.join(dd, 'sequence') + '.npy'
-    # if command line argument provided
-    else:
-        fname = os.path.join(dd, sys.argv[1]) + '.npy'
-        if not os.path.isfile(fname):
-            print('sequence does not exist')
-    data_in = np.load(fname)
+        if self.args.matrix.size < 2:
+            self.matrix = cv.load_data(self.args.fname)
+        # use matrix directly
+        else:
+            self.matrix = self.args.matrix
 
-    i_grid = data_in.shape[0]
-    t_step = 200 # milliseconds
+        if self.args.vis_type == 'plot_binary':
+            self.matrix = cv.intensity_to_binary(self.matrix, self.args.pin_reps)
+            self.update_rate = self.args.pin_delay * 1000
+        else:
+            self.update_rate = self.args.time_step * 1000
 
-    # initialize 3D scatter plot
-    x, y, z = np.meshgrid(np.arange(i_grid), np.arange(i_grid), np.arange(i_grid))
-    fig = plt.figure()
-    ax = p3.Axes3D(fig)
+        self.i_grid = self.matrix.shape[0]
+        self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
+        self.fig = plt.figure()
+        self.ax = p3.Axes3D(self.fig)
+        self.run_animation()
 
-
-
-    def update_plot(i):
-        # read in each slice of the 4D matrix
-        data_vol = data_in[:, :, :, i]
+    def plot_volume(self, vol):
         # TODO: how to change colours rather than redrawing plot?
         plt.cla()
-        scat = ax.scatter(x.flatten(), y.flatten(), z.flatten(), c=data_vol.reshape(-1), cmap='binary',
-                          depthshade=False, vmin=0, vmax=1, edgecolors="white")
+        scat = self.ax.scatter(self.x.flatten(), self.y.flatten(), self.z.flatten(), c=vol.reshape(-1), cmap='binary', depthshade=False, vmin=0, vmax=1, edgecolors="white")
+        self.ax.set_xticklabels("")
+        self.ax.set_yticklabels("")
+        self.ax.set_zticklabels("")
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_zlabel('Z')
+        return scat
 
-        ax.set_xticklabels("")
-        ax.set_yticklabels("")
-        ax.set_zticklabels("")
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        return scat,
+    def update_plot(self, i):
+        # read in each volume of the 4D matrix
+        data_vol = self.matrix[:, :, :, i]
+        self.plot_volume(data_vol)
 
-    # create visualization
-    # animation for 4D matrix
-    if len(data_in.shape) == 4:
-        ani = animation.FuncAnimation(fig, update_plot, interval=t_step, frames=data_in.shape[3])
-        plt.show()
-    # static plot if only 3D matrix
-    elif len(data_in.shape) == 3:
-        plt.cla()
-        scat = ax.scatter(x.flatten(), y.flatten(), z.flatten(), c=data_in.reshape(-1), cmap='binary',
-                          depthshade=False, vmin=0, vmax=1, edgecolors="white")
-        ax.set_xticklabels("")
-        ax.set_yticklabels("")
-        ax.set_zticklabels("")
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        plt.show()
+    def run_animation(self):
+        # animation for 4D matrix
+        if len(self.matrix.shape) == 4:
+            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
+            plt.show()
+        # static plot if only 3D matrix
+        elif len(self.matrix.shape) == 3:
+            plt.cla()
+            self.plot_volume(self.matrix)
 
 
-main()
+if __name__ == "__main__":
+    my_plot = PlotSequence()
+
+
