@@ -22,3 +22,4 @@ cv.save_matrix(data_matrix, 'fill_up')
 
 # call visualization script
 os.system("python run_visualisation.py --fname fill_up --vis_type plot --time_step 0.5")
+
