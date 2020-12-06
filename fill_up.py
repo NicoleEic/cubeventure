@@ -28,5 +28,4 @@ fname = os.path.join(dd, 'fill_up')
 np.save(fname, data_matrix)
 
 # call visualization script
-#os.system("python visualisation_demo.py fill_up")
-os.system("python run_visualisation.py fill_up")
+os.system("python run_visualisation.py --fname fill_up --time_step=0.1")

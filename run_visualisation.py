@@ -12,7 +12,6 @@ parser.add_argument('--time_step', type=np.float64, help='time between volumes',
 parser.add_argument('--cube_size', type=np.int, help='size of cube', default=3)
 args = parser.parse_args()
 
-print(args)
 
 i_grid = args.cube_size
 
@@ -78,7 +77,7 @@ def show_pattern(pattern):
                 GPIO.output(pins, False)
                 GPIO.output(layers[layer], False)
 
-# Mainline logic . . . 
+# mainline logic 
 try:
     print('Press CTRL+C to stop script')
     setupColumns()
