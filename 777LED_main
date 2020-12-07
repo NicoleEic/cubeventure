@@ -1,0 +1,179 @@
+import RPi.GPIO as GPIO
+import time
+import numpy as np
+
+LSBFIRST = 1
+MSBFIRST = 2
+
+dataPin   = 20    #DS Pin of 74HC595(Pin14)
+latchPin  = 16    #ST_CP Pin of 74HC595(Pin12)
+clockPin = 21    #CH_CP Pin of 74HC595(Pin11)
+
+# Mapping of xyz coordinates to shift register number
+xy_bib=np.array([[47,39,25,26,20,22,9],
+          [46,38,27,28,21,23,10],
+          [30,29,17,18,7,11,12],
+          [34,36,37,42,24,15,14],
+          [43,44,35,0,41,16,13],
+          [40,32,45,19,5,8,3],
+          [48,33,31,6,4,2,1]]);
+z_bib=[0,2,5,3,1,4,6];
+
+
+
+######## BASIC FUNCTIONS ########
+
+
+
+# setup GPIO pins
+def setup():
+  GPIO.setmode(GPIO.BCM)
+  GPIO.setup(dataPin, GPIO.OUT)
+  GPIO.setup(latchPin, GPIO.OUT)
+  GPIO.setup(clockPin, GPIO.OUT)
+  
+# convert xy layer to serial output
+def show_layer(val):
+  for i in range(0,49):
+    GPIO.output(clockPin,GPIO.LOW);
+    if val[i]>0:
+        GPIO.output(dataPin,GPIO.HIGH)
+    else:
+        GPIO.output(dataPin,GPIO.LOW)
+    GPIO.output(clockPin,GPIO.HIGH);
+  
+# convert z-coordinate to serial output 
+def set_zlayer(dPin,cPin,val):
+  GPIO.output(dPin,GPIO.LOW)
+  for i in range(0,val):
+    GPIO.output(cPin,GPIO.LOW);
+    GPIO.output(cPin,GPIO.HIGH);
+  GPIO.output(dPin,GPIO.HIGH)
+  GPIO.output(cPin,GPIO.LOW);
+  GPIO.output(cPin,GPIO.HIGH);
+  GPIO.output(dPin,GPIO.LOW)
+  for i in range(val+1,7):
+    GPIO.output(cPin,GPIO.LOW);
+    GPIO.output(cPin,GPIO.HIGH);
+  
+# clean up GPIO pins and serial output
+def destroy():
+  for i in range(0,80):
+    GPIO.output(clockPin,GPIO.LOW);
+    GPIO.output(dataPin,GPIO.LOW)
+    GPIO.output(clockPin,GPIO.HIGH);
+    GPIO.output(latchPin,GPIO.LOW)
+    GPIO.output(latchPin,GPIO.HIGH)
+  GPIO.cleanup()
+
+# transform raw xzy data into cube coordinates 
+def transform_dat(rawdat):
+    dat=np.zeros((49,7))
+    for i in range(7):
+        for x in range(7):
+            for y in range(7):
+                dat[xy_bib[x,y],z_bib[i]]=rawdat[x,y,i]
+    return dat
+
+# Setup Nfr frames of animation function anim_fct, including intensity sampling (=6 frames)
+def setup_animation(anim_fct,Nfr):
+    dat_fr=np.zeros((49,7,Nfr,6));
+    for i in range(Nfr):
+        rawdat=anim_fct(i,Nfr);
+        temp=transform_dat(rawdat);
+        # brightness sampling
+        # low
+        idx=np.logical_and(temp<0.41,temp>0.15)
+        for j in np.arange(0,6,3):
+            dat_fr[idx,i,j]=np.ceil(temp[idx]);
+            dat_fr[idx,i,j+1]=np.floor(temp[idx]);
+            dat_fr[idx,i,j+2]=np.floor(temp[idx]);
+        # medium
+        idx=np.logical_and(temp<0.75,temp>=0.41)
+        for j in np.arange(0,6,2):
+            dat_fr[idx,i,j]=np.ceil(temp[idx]);
+            dat_fr[idx,i,j+1]=np.floor(temp[idx]);
+        # high
+        idx=(temp>=0.75)
+        for j in np.arange(0,6):
+            dat_fr[idx,i,j]=np.ceil(temp[idx]);
+    return dat_fr
+
+# displays frame by looping over z-layers
+def snapshot(dat):
+    # first convert intensity into binary dat (intensitz sampling = 6)
+    for k in range(6):
+        bindat=dat[:,:,k];
+        for i in range(0,7):
+          GPIO.output(latchPin,GPIO.LOW)
+          set_zlayer(dataPin,clockPin,i)
+          show_layer(bindat[:,i])
+          GPIO.output(latchPin,GPIO.HIGH)
+          
+          
+  
+######## ANIMATION FUNCTIONS ########
+
+
+
+# test single LED at position xzy
+def single(x,y,z):
+    dat=np.zeros(49)
+    dat[xy_bib[x,y]]=1
+    GPIO.output(latchPin,GPIO.LOW)
+    set_zlayer(dataPin,clockPin,z_bib[z])
+    show_layer(dat)
+    GPIO.output(latchPin,GPIO.HIGH)
+
+def cube(frnum,Nfr):
+    R=3*np.sin(frnum/Nfr*np.pi)**2
+    low=int(round(3-R))
+    high=int(round(3+R))
+    intens=1-0.8*R/3;
+    rawdat=np.zeros((7,7,7));
+    rawdat[low,low,low:high+1]=intens;
+    rawdat[low,high,low:high+1]=intens;
+    rawdat[high,low,low:high+1]=intens;
+    rawdat[high,high,low:high+1]=intens;
+    rawdat[low:high+1,low,low]=intens;
+    rawdat[low:high+1,high,low]=intens;
+    rawdat[low,low:high+1,low]=intens;
+    rawdat[high,low:high+1,low]=intens;
+    rawdat[low:high+1,low,high]=intens;
+    rawdat[low:high+1,high,high]=intens;
+    rawdat[low,low:high+1,high]=intens;
+    rawdat[high,low:high+1,high]=intens;
+    return rawdat
+
+def random(frnum,Nfr):
+    #rho=3*(frnum/Nfr)*(1-frnum/Nfr)
+    #rawdat=np.random.rand(7,7,7)-rho;
+    rawdat=(np.random.rand(7,7,7)-0.83);
+    return rawdat
+
+
+
+######## MAIN ########
+
+
+
+if __name__ == '__main__':
+  print ('Program is starting...' )
+  setup() 
+  try:
+    # First create frame data
+    Nfr=100
+    i=0;
+    dat_fr=setup_animation(random,Nfr)
+    
+    # Loop over frames
+    while True:
+        if i==Nfr: i=0;
+        dat=dat_fr[:,:,i,:];
+        # loop for repeating same frame, used to slow down animations
+        for k in range(60):
+            snapshot(dat);
+        i+=1;
+    destroy() 
+  except KeyboardInterrupt:  
+    destroy() 
