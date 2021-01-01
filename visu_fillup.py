@@ -1,11 +1,11 @@
 import numpy as np
 import os
-import cuebeventure as cv
+import cubeventure as cv
 
+visu_name = 'fillup'
 i_grid = 7
 
 data_matrix = np.zeros((i_grid, i_grid, i_grid, i_grid**3))
-
 
 for i in np.arange(1, i_grid**3):
     long = data_matrix[:, :, :, 0].reshape(i_grid ** 3)
@@ -18,8 +18,8 @@ for i in np.arange(1, i_grid**3):
 # crop out as solution for now
 data_matrix = data_matrix[:, :, :, 1:-1]
 
-cv.save_matrix(data_matrix, 'fill_up')
+cv.save_matrix(data_matrix, visu_name)
 
 # call visualization script
-os.system("python run_visualisation.py --fname fill_up --vis_type plot --time_step 0.5")
+os.system(f'python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.5')
 

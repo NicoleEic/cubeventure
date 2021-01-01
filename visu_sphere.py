@@ -2,9 +2,9 @@ import numpy as np
 import os
 import scipy.ndimage
 import cubeventure as cv
-from matplotlib import pyplot as plt
 
-i_grid = 3
+visu_name = 'sphere'
+i_grid = 7
 
 # initialize empty matrix with centre 1
 data_matrix = np.zeros((i_grid, i_grid, i_grid))
@@ -14,9 +14,9 @@ mid = np.int(np.floor(i_grid/2))
 vol[mid, mid, mid] = 10
 
 # create spheres with various radius
-n_steps = 6
+n_steps = 20
 thres = 0.5
-for sig in np.arange(0, n_steps):
+for sig in np.linspace(0, i_grid*0.8, n_steps):
     vol_s = scipy.ndimage.filters.gaussian_filter(vol, [sig, sig, sig], mode='constant')
     vol_s = vol_s / np.max(vol_s)
     #vol_s = np.where(vol_s > thres, 1, 0)
@@ -26,8 +26,8 @@ for sig in np.arange(0, n_steps):
 # flip matrix for decreasing sphere
 data_matrix = np.append(data_matrix, np.flip(data_matrix), axis=3)
 
-cv.save_matrix(data_matrix, 'sphere')
+cv.save_matrix(data_matrix, visu_name)
 
 # call visualization script
-os.system("python run_visualisation.py --fname sphere --vis_type plot --time_step 0.2")
+os.system(f'python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.1')
 

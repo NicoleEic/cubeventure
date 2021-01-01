@@ -1,7 +1,8 @@
 import numpy as np
 import os
-import scipy.ndimage.interpolation
+import cubeventure as cv
 
+visu_name = 'plane'
 i_grid = 7
 space = 3
 n_steps = 100
@@ -15,17 +16,7 @@ for i in np.arange(0, n_steps):
     data_matrix[:, :, :, i] = np.repeat(plane[:, :, np.newaxis], i_grid, axis=2)
 
 
-
-
-
-
-
-### save matrix
-# data path
-dd = os.path.join(os.path.dirname(__file__), 'sequences')
-# output filename
-fname = os.path.join(dd, 'plane')
-np.save(fname, data_matrix)
+cv.save_matrix(data_matrix, visu_name)
 
 # call visualization script
-os.system("python visualisation_demo.py plane")
+os.system(f'python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.3')

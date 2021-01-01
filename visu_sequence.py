@@ -1,8 +1,8 @@
-import numpy as np
 import os
 import cubeventure as cv
 import numpy as np
 
+visu_name = 'sequence'
 i_grid = 3
 
 n_vols = i_grid ** 3
@@ -16,7 +16,7 @@ for i_x in np.arange(i_grid):
             i = i + 1
 
 data_in = data_in.astype(np.int32)
-cv.save_matrix(data_in, 'sequence')
+cv.save_matrix(data_in, visu_name)
 
 # call visualization script
-os.system("python3 run_visualisation.py --fname sequence --vis_type cube --time_step 0.5")
+os.system(f'python3 run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.5')

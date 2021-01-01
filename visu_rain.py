@@ -2,8 +2,9 @@ import numpy as np
 import os
 import cubeventure as cv
 
+visu_name = 'rain'
 i_grid = 7
-n_drops = 25
+n_drops = 50
 vols_max = 50
 
 # initialize matrix
@@ -28,7 +29,7 @@ data_matrix[:, :, i_grid-1, :] = 1
 final_vol = np.max(np.nonzero(data_matrix.reshape(-1, data_matrix.shape[-1])))
 data_matrix = data_matrix[:, :, :, 0:final_vol]
 
-cv.save_matrix(data_matrix, 'rain')
+cv.save_matrix(data_matrix, visu_name)
 
 # call visualization script
-os.system("python run_visualisation.py --fname rain --vis_type plot --time_step 0.5")
+os.system(f'python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.3')

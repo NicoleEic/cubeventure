@@ -2,6 +2,7 @@ import numpy as np
 import cubeventure as cv
 import os
 
+visu_name = 'wave'
 i_grid = 3
 mx = np.zeros((i_grid, i_grid, i_grid, 100))
 t = np.arange(0, mx.shape[3]+i_grid*2)
@@ -15,8 +16,7 @@ for ix in np.arange(0, i_grid):
             z = z_arr[it+ix]
             mx[ix, iy, 0:z, it] = 1
 
-fname = 'wave'
-cv.save_matrix(mx, fname)
+cv.save_matrix(mx, visu_name)
 # call visualization script
-os.system(f"python run_visualisation.py --fname {fname} --vis_type plot --time_step 0.1")
+os.system(f"python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.1")
 
