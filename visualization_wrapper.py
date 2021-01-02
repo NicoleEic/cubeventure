@@ -4,6 +4,8 @@ import cubeventure as cv
 
 if __name__ == "__main__":
     my_args, unknown = cv.my_parser().parse_known_args()
+    setattr(my_args, 'vis_type', 'cube')
+
     print(my_args)
 
     if my_args.vis_type == 'plot':
