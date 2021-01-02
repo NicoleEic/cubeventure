@@ -94,23 +94,36 @@ def intensity_to_binary(matrix, n_steps_pin):
     return expanded
 
 
-class CubeRun:
-    def __init__(self, args):
+class Visualization:
+    def __init__(self, args=my_parser().parse_known_args()[0]):
+        self.args = args
+        self.ani_running = False
+        self.i_grid = self.matrix.shape[0]
+        if self.args.matrix.size < 2:
+            self.matrix = load_matrix(self.args.fname)
+        # use matrix directly
+        else:
+            self.matrix = self.args.matrix
+
+    def start_stop(self):
+        print('no start-stop possible')
+
+
+class CubeRun(Visualization):
+    def __init__(self):
+        super(CubeRun, self).__init__()
+        self.col_pins, self.ly_pins = grid_array(self.i_grid)
         try:
-            self.args = args
-            self.i_grid = args.cube_size
-            self.col_pins, self.ly_pins = grid_array(self.i_grid)
-            if len(self.args.matrix) == 0:
-                self.matrix = load_matrix(self.args.fname)
-            else:
-                self.matrix = self.args.matrix
             self.setup_columns()
-            self.show_pattern()
+            self.run_animation()
             #self.single_pin(col=5, layer=23)
-        except KeyboardInterrupt:
-            GPIO.cleanup()
-        finally:
-            GPIO.cleanup()
+        except:
+            self.close_animation()
+
+    def close_animation(self):
+        self.ani_running = False
+        GPIO.cleanup()
+        print('closed')
 
     # initialisation of the pins
     def setup_columns(self):
@@ -130,35 +143,30 @@ class CubeRun:
         GPIO.output(col, False)
         GPIO.output(layer, False)
 
-    def show_pattern(self):
-        # Time delay built in between pin output
-        t_p = self.args.pin_delay
-        # time step between matrix volumes
-        t_s = self.args.time_step
-
+    def run_animation(self):
+        self.ani_running = True
         if self.matrix.dtype != np.int32:
             print('convert intensities')
-            n_steps_pin = self.args.n_steps_pin
             # repetition of cycles through layers
-            n_reps = np.ceil(t_s / (n_steps_pin * self.i_grid * t_p)).astype(np.int)
+            n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
             # loop over real volumes
             for i_v in np.arange(0, self.matrix.shape[3]):
                 vol = self.matrix[:, :, :, i_v]
                 # convert intensities to binary matrix
-                vol_exp = intensity_to_binary(vol, n_steps_pin)
+                vol_exp = intensity_to_binary(vol, self.args.n_steps_pin)
                 # loop over repetitions
-                for i_r in np.arange(0, n_reps):
-                    for i_s in np.arange(0, n_steps_pin):
+                for _ in np.arange(0, n_reps):
+                    # loop over expanded volumes
+                    for i_s in np.arange(0, self.args.n_steps_pin):
                         vol_s = vol_exp[:, :, :, i_s]
                         self.show_vol(vol_s)
         else:
-            matrix = self.matrix
-            n_reps = np.ceil(t_s / (self.i_grid * t_p)).astype(np.int)
-            # loop over elements of expanded matrix
-            for i_v in np.arange(0, matrix.shape[3]):
-                vol = matrix[:, :, :, i_v]
+            n_reps = np.ceil(self.args.time_step / (self.i_grid * self.args.pin_delay)).astype(np.int)
+            # loop over real volumes
+            for i_v in np.arange(0, self.matrix.shape[3]):
+                vol = self.matrix[:, :, :, i_v]
                 # loop over repetitions
-                for i_r in np.arange(0, n_reps):
+                for _ in np.arange(0, n_reps):
                     self.show_vol(vol)
 
     def show_vol(self, vol):
@@ -173,35 +181,30 @@ class CubeRun:
             GPIO.output(self.ly_pins[i_z], False)
 
 
-class PlotRun:
-    def __init__(self, args):
-        self.args = args
-
-        if self.args.matrix.size < 2:
-            self.matrix = load_matrix(self.args.fname)
-        # use matrix directly
-        else:
-            self.matrix = self.args.matrix
-
+class PlotRun(Visualization):
+    def __init__(self):
+        super(PlotRun, self).__init__()
         if self.args.vis_type == 'plot_binary':
             self.matrix = intensity_to_binary(self.matrix, self.args.n_steps_pin)
             self.update_rate = self.args.pin_delay * 1000
         else:
             self.update_rate = self.args.time_step * 1000
 
-        self.i_grid = self.matrix.shape[0]
+        # initialize figure
         self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
         self.fig = plt.figure()
         self.ax = p3.Axes3D(self.fig)
+        self.ani = []
+        self.fig.canvas.mpl_connect('button_press_event', self.start_stop)
+        self.fig.canvas.mpl_connect('close_event', self.close_animation)
         if self.i_grid == 3:
             self.marker_size = 500
         elif self.i_grid == 7:
             self.marker_size = 50
         else:
             self.marker_size = 40
-        self.run_animation()
 
-    def plot_volume(self, vol):
+    def show_vol(self, vol):
         # TODO: how to change colours rather than redrawing plot?
         plt.cla()
         scat = self.ax.scatter(self.x.flatten(), self.y.flatten(), self.z.flatten(), s=self.marker_size, c=vol.reshape(-1), cmap='binary', depthshade=False, vmin=0, vmax=1, edgecolors="white")
@@ -216,14 +219,27 @@ class PlotRun:
     def update_plot(self, i):
         # read in each volume of the 4D matrix
         data_vol = self.matrix[:, :, :, i]
-        self.plot_volume(data_vol)
+        self.show_vol(data_vol)
+
+    def start_stop(self, *event):
+        if self.ani_running:
+            self.ani.event_source.stop()
+            self.ani_running = False
+        else:
+            self.ani.event_source.start()
+            self.ani_running = True
+
+    def close_animation(self, *event):
+        self.ani_running = False
+        print('closed')
 
     def run_animation(self):
+        self.ani_running = True
         # animation for 4D matrix
         if len(self.matrix.shape) == 4:
-            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
+            self.ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
             plt.show()
         # static plot if only 3D matrix
         elif len(self.matrix.shape) == 3:
             plt.cla()
-            self.plot_volume(self.matrix)
+            self.show_vol(self.matrix)
