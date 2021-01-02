@@ -15,16 +15,21 @@ if 'darwin' in sys.platform:
 # running on raspberry pi    
 elif 'linux' in sys.platform:
     import RPi.GPIO as GPIO
+    from pynput import keyboard
 
 
 def my_parser():
     parser = argparse.ArgumentParser(description='Optional description')
+    if 'darwin' in sys.platform:
+        vis_type = 'plot'
+    elif 'linux' in sys.platform:
+        vis_type = 'cube'
     parser.add_argument('--fname', type=str, help='path to visualization file', default='sequence')
     parser.add_argument('--matrix', type=np.array, help='numpy array with matrix', default=np.zeros(0))
     parser.add_argument('--pin_delay', type=np.float64, help='delay between pin outputs', default=0.0002)
     parser.add_argument('--time_step', type=np.float64, help='time between volumes in s', default=0.5)
     parser.add_argument('--cube_size', type=np.int, help='size of cube', default=3)
-    parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default='plot')
+    parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default=vis_type)
     parser.add_argument('--n_steps_pin', type=np.int32, help='length of binary vetor', default=6)
     return parser
 
@@ -95,35 +100,36 @@ def intensity_to_binary(matrix, n_steps_pin):
 
 
 class Visualization:
-    def __init__(self, args=my_parser().parse_known_args()[0]):
+    def __init__(self, args=my_parser().parse_known_args()[0], **kwargs):
         self.args = args
         self.ani_running = False
-        self.i_grid = self.matrix.shape[0]
         if self.args.matrix.size < 2:
             self.matrix = load_matrix(self.args.fname)
         # use matrix directly
         else:
             self.matrix = self.args.matrix
-
+        self.i_grid = self.matrix.shape[0]
     def start_stop(self):
         print('no start-stop possible')
 
 
 class CubeRun(Visualization):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(CubeRun, self).__init__()
         self.col_pins, self.ly_pins = grid_array(self.i_grid)
         try:
             self.setup_columns()
-            self.run_animation()
             #self.single_pin(col=5, layer=23)
         except:
             self.close_animation()
-
+    
     def close_animation(self):
         self.ani_running = False
         GPIO.cleanup()
         print('closed')
+        
+    def start_stop(self):
+        print('start_stop')
 
     # initialisation of the pins
     def setup_columns(self):
@@ -182,7 +188,7 @@ class CubeRun(Visualization):
 
 
 class PlotRun(Visualization):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(PlotRun, self).__init__()
         if self.args.vis_type == 'plot_binary':
             self.matrix = intensity_to_binary(self.matrix, self.args.n_steps_pin)
