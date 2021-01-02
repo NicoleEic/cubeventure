@@ -4,14 +4,16 @@ import os
 import sys
 from time import sleep
 
-if 'os' in os.name:
+# running on Mac for testing
+if 'darwin' in sys.platform:
     from fake_rpi.RPi import GPIO as GPIO
     import matplotlib.pyplot as plt
     import mpl_toolkits.mplot3d.axes3d as p3
     from matplotlib import animation
     import matplotlib
     matplotlib.use("TkAgg")
-elif 'ras' in os.name:
+# running on raspberry pi    
+elif 'linux' in sys.platform:
     import RPi.GPIO as GPIO
 
 

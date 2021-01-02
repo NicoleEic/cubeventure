@@ -29,5 +29,5 @@ data_matrix = np.append(data_matrix, np.flip(data_matrix), axis=3)
 cv.save_matrix(data_matrix, visu_name)
 
 # call visualization script
-os.system(f'python run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.1')
+os.system(f'python visualization_wrapper.py --fname {visu_name} --vis_type plot --time_step 0.1')
 

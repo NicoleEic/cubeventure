@@ -19,4 +19,4 @@ data_in = data_in.astype(np.int32)
 cv.save_matrix(data_in, visu_name)
 
 # call visualization script
-os.system(f'python3 run_visualisation.py --fname {visu_name} --vis_type plot --time_step 0.5')
+os.system(f'python3 visualization_wrapper.py --fname {visu_name} --vis_type cube --time_step 0.5')

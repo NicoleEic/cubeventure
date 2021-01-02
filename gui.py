@@ -1,7 +1,7 @@
 import tkinter as tk
 import numpy as np
-import pandas as pd
 import cubeventure as cv
+import sys
 
 
 class GuiRun:
@@ -29,12 +29,15 @@ class GuiRun:
         tk.Grid.columnconfigure(self.bts, 1, weight=1)
         tk.Grid.columnconfigure(self.bts, 2, weight=1)
 
-        n_bts = 6
+        n_bts = 5
         bts = {}
         for i_b in np.arange(1, n_bts+1):
             bt = tk.Button(self.bts, text=self.mapping[f'{i_b}'])
             bts[f'bt{i_b}'] = bt
             bt.bind('<Button-1>', self.click_bt)
+       
+        bts['bt6'] = tk.Button(self.bts, text='exit', command=self.close)
+            
 
         bts['bt1'].grid(row=0, column=0, sticky='NSEW')
         bts['bt2'].grid(row=0, column=1, sticky='NSEW')
@@ -48,6 +51,9 @@ class GuiRun:
         my_args, unknown = cv.my_parser().parse_known_args()
         setattr(my_args, 'sequence', visu_name)
         cv.PlotRun(my_args)
+        
+    def close(self):
+        sys.exit()
 
 
 def main():
