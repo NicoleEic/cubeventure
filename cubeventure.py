@@ -96,19 +96,19 @@ class Visualization:
     def __init__(self, args=my_parser().parse_known_args()[0]):
         self.args = args
         self.ani_running = False
-        self.i_grid = self.matrix.shape[0]
         if self.args.matrix.size < 2:
             self.matrix = load_matrix(self.args.fname)
         # use matrix directly
         else:
             self.matrix = self.args.matrix
+        self.i_grid = self.matrix.shape[0]
 
     def start_stop(self):
         print('no start-stop possible')
 
 
 class CubeRun(Visualization):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super(CubeRun, self).__init__()
         self.col_pins, self.ly_pins = grid_array(self.i_grid)
         try:
