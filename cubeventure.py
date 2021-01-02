@@ -68,8 +68,15 @@ def grid_array(i_grid):
         # top - middle - top
         ly_pins = [24, 23, 25]
     elif i_grid == 7:
-        print('define pin array')
-        sys.exit()
+        # TODO: check with Liam
+        col_pins = np.array([[47, 39, 25, 26, 20, 22, 9],
+                           [46, 38, 27, 28, 21, 23, 10],
+                           [30, 29, 17, 18, 7, 11, 12],
+                           [34, 36, 37, 42, 24, 15, 14],
+                           [43, 44, 35, 0, 41, 16, 13],
+                           [40, 32, 45, 19, 5, 8, 3],
+                           [48, 33, 31, 6, 4, 2, 1]])
+        ly_pins = [0, 2, 5, 3, 1, 4, 6]
     return col_pins, ly_pins
 
 
@@ -85,7 +92,7 @@ def intensity_to_binary(matrix, n_steps_pin):
         vol = matrix[:, :, :, i_t]
         ind_start = i_t * n_steps_pin
         ind_stop = i_t * n_steps_pin + n_steps_pin
-        # loop over z, x, z
+        # loop over z, x, y
         for iz in np.arange(0, i_grid):
             for ix in np.arange(0, i_grid):
                 for iy in np.arange(0, i_grid):
@@ -115,9 +122,12 @@ class Visualization:
 
 
 class CubeRun(Visualization):
-    def __init__(self, *args, **kwargs):
-        super(CubeRun, self).__init__()
+    def __init__(self, args, root, **kwargs):
+        super(CubeRun, self).__init__(args)
+        self.n_reps = np.ceil(self.args.time_step / (self.i_grid * self.args.pin_delay)).astype(np.int)
+        self.root = root
         self.col_pins, self.ly_pins = grid_array(self.i_grid)
+        self.i_v = 0
         try:
             self.setup_columns()
             #self.single_pin(col=5, layer=23)
@@ -131,6 +141,10 @@ class CubeRun(Visualization):
         
     def start_stop(self):
         print('start_stop')
+        if self.ani_running:
+            self.ani_running = False
+        else:
+            self.ani_running = True
 
     # initialisation of the pins
     def setup_columns(self):
@@ -152,29 +166,37 @@ class CubeRun(Visualization):
 
     def run_animation(self):
         self.ani_running = True
-        if self.matrix.dtype != np.int32:
-            print('convert intensities')
-            # repetition of cycles through layers
-            n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
-            # loop over real volumes
-            for i_v in np.arange(0, self.matrix.shape[3]):
-                vol = self.matrix[:, :, :, i_v]
-                # convert intensities to binary matrix
-                vol_exp = intensity_to_binary(vol, self.args.n_steps_pin)
+        # if self.matrix.dtype != np.int32:
+        #     print('convert intensities')
+        #     # repetition of cycles through layers
+        #     n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
+        #     # loop over real volumes
+        #     for i_v in np.arange(0, self.matrix.shape[3]):
+        #         vol = self.matrix[:, :, :, i_v]
+        #         # convert intensities to binary matrix
+        #         vol_exp = intensity_to_binary(vol, self.args.n_steps_pin)
+        #         # loop over repetitions
+        #         for _ in np.arange(0, n_reps):
+        #             # loop over expanded volumes
+        #             for i_s in np.arange(0, self.args.n_steps_pin):
+        #                 vol_s = vol_exp[:, :, :, i_s]
+        #                 self.show_vol(vol_s)
+        #else:
+        self.run_normal_vols()
+
+    def run_normal_vols(self):
+        print('fififif')
+        if self.ani_running:
+            print('if')
+            while self.i_v < self.matrix.shape[3]:
+                vol = self.matrix[:, :, :, self.i_v]
                 # loop over repetitions
-                for _ in np.arange(0, n_reps):
-                    # loop over expanded volumes
-                    for i_s in np.arange(0, self.args.n_steps_pin):
-                        vol_s = vol_exp[:, :, :, i_s]
-                        self.show_vol(vol_s)
-        else:
-            n_reps = np.ceil(self.args.time_step / (self.i_grid * self.args.pin_delay)).astype(np.int)
-            # loop over real volumes
-            for i_v in np.arange(0, self.matrix.shape[3]):
-                vol = self.matrix[:, :, :, i_v]
-                # loop over repetitions
-                for _ in np.arange(0, n_reps):
+                for _ in np.arange(0, self.n_reps):
                     self.show_vol(vol)
+                self.i_v = self.i_v + 1
+                self.root.update()
+        else:
+            print('else')
 
     def show_vol(self, vol):
         # loop over layers
@@ -189,8 +211,8 @@ class CubeRun(Visualization):
 
 
 class PlotRun(Visualization):
-    def __init__(self, *args, **kwargs):
-        super(PlotRun, self).__init__()
+    def __init__(self, args, **kwargs):
+        super(PlotRun, self).__init__(args)
         if self.args.vis_type == 'plot_binary':
             self.matrix = intensity_to_binary(self.matrix, self.args.n_steps_pin)
             self.update_rate = self.args.pin_delay * 1000
@@ -237,6 +259,7 @@ class PlotRun(Visualization):
             self.ani_running = True
 
     def close_animation(self, *event):
+        self.ani.event_source.stop()
         self.ani_running = False
         print('closed')
 
