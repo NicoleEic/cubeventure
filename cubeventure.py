@@ -15,7 +15,6 @@ if 'darwin' in sys.platform:
 # running on raspberry pi    
 elif 'linux' in sys.platform:
     import RPi.GPIO as GPIO
-    from pynput import keyboard
 
 
 def my_parser():
@@ -120,6 +119,9 @@ class Visualization:
     def start_stop(self):
         print('no start-stop possible')
 
+    def close_animation(self):
+        print('nothing to close')
+
 
 class CubeRun(Visualization):
     def __init__(self, args, root, **kwargs):
@@ -140,7 +142,6 @@ class CubeRun(Visualization):
         print('closed')
         
     def start_stop(self):
-        print('start_stop')
         if self.ani_running:
             self.ani_running = False
         else:
@@ -166,37 +167,43 @@ class CubeRun(Visualization):
 
     def run_animation(self):
         self.ani_running = True
-        # if self.matrix.dtype != np.int32:
-        #     print('convert intensities')
-        #     # repetition of cycles through layers
-        #     n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
-        #     # loop over real volumes
-        #     for i_v in np.arange(0, self.matrix.shape[3]):
-        #         vol = self.matrix[:, :, :, i_v]
-        #         # convert intensities to binary matrix
-        #         vol_exp = intensity_to_binary(vol, self.args.n_steps_pin)
-        #         # loop over repetitions
-        #         for _ in np.arange(0, n_reps):
-        #             # loop over expanded volumes
-        #             for i_s in np.arange(0, self.args.n_steps_pin):
-        #                 vol_s = vol_exp[:, :, :, i_s]
-        #                 self.show_vol(vol_s)
-        #else:
-        self.run_normal_vols()
+        if self.matrix.dtype != np.int32:
+            print('convert intensities')
+            # repetition of cycles through layers
+            self.n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
+            self.run_expanded_vols()
+        else:
+            self.run_normal_vols()
+
+    def run_expanded_vols(self):
+        # loop over real volumes
+        while self.i_v < self.matrix.shape[3]:
+            if self.ani_running:
+                vol = self.matrix[:, :, :, self.i_v]
+                # convert intensities to binary matrix
+                vol_exp = intensity_to_binary(vol, self.args.n_steps_pin)
+                # loop over repetitions
+                for _ in np.arange(0, self.n_reps):
+                    # loop over expanded volumes
+                    for i_s in np.arange(0, self.args.n_steps_pin):
+                        vol_s = vol_exp[:, :, :, i_s]
+                        self.show_vol(vol_s)
+                        self.i_v = self.i_v + 1
+                        self.root.update()
+            else:
+                self.root.update()
 
     def run_normal_vols(self):
-        print('fififif')
-        if self.ani_running:
-            print('if')
-            while self.i_v < self.matrix.shape[3]:
+        while self.i_v < self.matrix.shape[3]:
+            if self.ani_running:
                 vol = self.matrix[:, :, :, self.i_v]
                 # loop over repetitions
                 for _ in np.arange(0, self.n_reps):
                     self.show_vol(vol)
                 self.i_v = self.i_v + 1
                 self.root.update()
-        else:
-            print('else')
+            else:
+                self.root.update()
 
     def show_vol(self, vol):
         # loop over layers
@@ -261,7 +268,7 @@ class PlotRun(Visualization):
     def close_animation(self, *event):
         self.ani.event_source.stop()
         self.ani_running = False
-        print('closed')
+        plt.close('all')
 
     def run_animation(self):
         self.ani_running = True

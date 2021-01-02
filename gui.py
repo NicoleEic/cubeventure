@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
-
 import numpy as np
 import cubeventure as cv
 import sys
@@ -11,9 +10,10 @@ class GuiRun:
     def __init__(self, master):
         self.master = master
         self.master.title("Cubeventure")
-        self.master.attributes('-fullscreen', True)
+        #self.master.attributes('-fullscreen', True)
 
         self.visu = cv.Visualization()
+
 
         self.mapping = {'1': 'sequence',
                         '2': 'rain',
@@ -49,7 +49,7 @@ class GuiRun:
             bt.bind('<Button-1>', self.click_bt)
 
         bts['bt7'] = ttk.Button(self.bts, text='start/stop', command=self.start_stop)
-        bts['bt8'] = ttk.Button(self.bts, text='exit', command=self.close)
+        bts['bt8'] = ttk.Button(self.bts, text='exit', command=self.close_gui)
 
         bts['bt1'].grid(row=0, column=0, sticky='NSEW')
         bts['bt2'].grid(row=0, column=1, sticky='NSEW')
@@ -60,13 +60,12 @@ class GuiRun:
         bts['bt7'].grid(row=2, column=0, sticky='NSEW')
         bts['bt8'].grid(row=2, column=2, sticky='NSEW')
 
-
     def click_bt(self, event):
-        visu_name = event.widget['text']
         my_args, unknown = cv.my_parser().parse_known_args()
-        setattr(my_args, 'fname', visu_name)
-        #setattr(my_args, 'vis_type', 'cube')
+        setattr(my_args, 'fname', event.widget['text'])
+        setattr(my_args, 'vis_type', 'cube')
 
+        self.visu.close_animation()
         if my_args.vis_type == 'plot':
             self.visu = cv.PlotRun(args=my_args)
             self.visu.run_animation()
@@ -75,10 +74,10 @@ class GuiRun:
             self.visu.run_animation()
 
     def start_stop(self):
-        self.visu.ani_running = False
         self.visu.start_stop()
-        
-    def close(self):
+
+    def close_gui(self):
+        self.visu.close_animation()
         sys.exit()
 
 
