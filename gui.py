@@ -48,7 +48,7 @@ class GuiRun:
         bts['bt6'].grid(row=1, column=2, sticky='NSEW')
         bts['bt7'].grid(row=2, column=0, sticky='NSEW')
 
-        self.visu = []
+        self.visu = cv.Visualization()
 
     def click_bt(self, event):
         visu_name = event.widget['text']
@@ -58,10 +58,7 @@ class GuiRun:
         self.visu.run_animation()
 
     def stop(self):
-        try:
-            self.visu.start_stop()
-        except:
-            print('start first')
+        self.visu.start_stop()
 
 
 def main():
