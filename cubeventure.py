@@ -93,7 +93,7 @@ def intensity_to_binary(matrix, n_steps_pin):
 
 
 class CubeRun:
-    def __init__(self, args):
+    def __init__(self, args=my_parser().parse_known_args()[0]):
         try:
             self.args = args
             self.i_grid = args.cube_size
@@ -172,7 +172,7 @@ class CubeRun:
 
 
 class PlotRun:
-    def __init__(self, args):
+    def __init__(self, args=my_parser().parse_known_args()[0]):
         self.args = args
 
         if self.args.matrix.size < 2:
@@ -191,13 +191,17 @@ class PlotRun:
         self.x, self.y, self.z = np.meshgrid(np.arange(self.i_grid), np.arange(self.i_grid), np.arange(self.i_grid))
         self.fig = plt.figure()
         self.ax = p3.Axes3D(self.fig)
+        self.fig.canvas.mpl_connect('button_press_event', self.start_stop)
+        self.fig.canvas.mpl_connect('close_event', self.close_callback)
+
         if self.i_grid == 3:
             self.marker_size = 500
         elif self.i_grid == 7:
             self.marker_size = 50
         else:
             self.marker_size = 40
-        self.run_animation()
+        self.ani_running = False
+        #self.run_animation()
 
     def plot_volume(self, vol):
         # TODO: how to change colours rather than redrawing plot?
@@ -216,10 +220,24 @@ class PlotRun:
         data_vol = self.matrix[:, :, :, i]
         self.plot_volume(data_vol)
 
+    def start_stop(self, *event):
+        if self.ani_running == 1:
+            self.ani.event_source.stop()
+            self.ani_running = False
+        else:
+            self.ani.event_source.start()
+            self.ani_running = True
+
+    def close_callback(self, *event):
+        self.ani_running = False
+        print('closed')
+
+
     def run_animation(self):
+        self.ani_running = True
         # animation for 4D matrix
         if len(self.matrix.shape) == 4:
-            ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
+            self.ani = animation.FuncAnimation(self.fig, self.update_plot, interval=self.update_rate, frames=self.matrix.shape[3])
             plt.show()
         # static plot if only 3D matrix
         elif len(self.matrix.shape) == 3:

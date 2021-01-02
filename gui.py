@@ -8,7 +8,7 @@ class GuiRun:
     def __init__(self, master):
         self.master = master
         self.master.title("Cubeventure")
-        self.master.attributes('-fullscreen', True)
+        #self.master.attributes('-fullscreen', True)
 
         self.mapping = {'1': 'sequence',
                         '2': 'rain',
@@ -25,6 +25,7 @@ class GuiRun:
 
         tk.Grid.rowconfigure(self.bts, 0, weight=1)
         tk.Grid.rowconfigure(self.bts, 1, weight=1)
+        tk.Grid.rowconfigure(self.bts, 2, weight=1)
         tk.Grid.columnconfigure(self.bts, 0, weight=1)
         tk.Grid.columnconfigure(self.bts, 1, weight=1)
         tk.Grid.columnconfigure(self.bts, 2, weight=1)
@@ -36,18 +37,31 @@ class GuiRun:
             bts[f'bt{i_b}'] = bt
             bt.bind('<Button-1>', self.click_bt)
 
+        bts['bt7'] = tk.Button(self.bts, text='stop', command=self.stop)
+
+
         bts['bt1'].grid(row=0, column=0, sticky='NSEW')
         bts['bt2'].grid(row=0, column=1, sticky='NSEW')
         bts['bt3'].grid(row=0, column=2, sticky='NSEW')
         bts['bt4'].grid(row=1, column=0, sticky='NSEW')
         bts['bt5'].grid(row=1, column=1, sticky='NSEW')
         bts['bt6'].grid(row=1, column=2, sticky='NSEW')
+        bts['bt7'].grid(row=2, column=0, sticky='NSEW')
+
+        self.visu = []
 
     def click_bt(self, event):
         visu_name = event.widget['text']
         my_args, unknown = cv.my_parser().parse_known_args()
-        setattr(my_args, 'sequence', visu_name)
-        cv.PlotRun(my_args)
+        setattr(my_args, 'fname', visu_name)
+        self.visu = cv.PlotRun(my_args)
+        self.visu.run_animation()
+
+    def stop(self):
+        try:
+            self.visu.start_stop()
+        except:
+            print('start first')
 
 
 def main():
