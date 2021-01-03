@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 from time import sleep
+import pandas as pd
 
 # running on Mac for testing
 if 'darwin' in sys.platform:
@@ -31,6 +32,15 @@ def my_parser():
     parser.add_argument('--vis_type', type=str, help='cube, plot, plot_binary', default=vis_type)
     parser.add_argument('--n_steps_pin', type=np.int32, help='length of binary vetor', default=6)
     return parser
+
+
+defaults = pd.DataFrame(columns=['bt_no', 'vis_name', 'time_step'])
+defaults.loc[len(defaults)] = ['1', 'sequence', 0.1]
+defaults.loc[len(defaults)] = ['2', 'rain', 0.5]
+defaults.loc[len(defaults)] = ['3', 'sphere', 0.5]
+defaults.loc[len(defaults)] = ['4', 'fillup', 0.5]
+defaults.loc[len(defaults)] = ['5', 'intensity', 0.5]
+defaults.loc[len(defaults)] = ['6', 'wave', 0.5]
 
 
 def args_to_cmd(args):
@@ -157,6 +167,10 @@ class CubeRun(Visualization):
         GPIO.output(self.col_pins.reshape(-1).tolist(), False)
         GPIO.output(self.ly_pins, False)
 
+    def update_time_step(self, time_step):
+        setattr(self.args, 'time_step', time_step)
+        self.n_reps = np.ceil(self.args.time_step / (self.args.n_steps_pin * self.i_grid * self.args.pin_delay)).astype(np.int)
+
     # function to turn on a single pin
     def single_pin(self, col=13, layer=23, t_light=5):
         GPIO.output(col, True)
@@ -257,6 +271,10 @@ class PlotRun(Visualization):
         data_vol = self.matrix[:, :, :, i]
         self.show_vol(data_vol)
 
+    def update_time_step(self, time_step):
+        self.ani.event_source.interval = time_step * 1000
+        self.update_rate = time_step * 1000
+
     def start_stop(self, *event):
         if self.ani_running:
             self.ani.event_source.stop()
@@ -266,7 +284,8 @@ class PlotRun(Visualization):
             self.ani_running = True
 
     def close_animation(self, *event):
-        self.ani.event_source.stop()
+        if self.ani.event_source:
+            self.ani.event_source.stop()
         self.ani_running = False
         plt.close('all')
 
